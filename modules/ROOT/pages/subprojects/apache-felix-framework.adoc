@@ -1,0 +1,8 @@
+= Apache Felix Framework
+:framework-version: R8
+
+The Felix Framework subproject is an implementation of the OSGi {framework-version} core framework specification.
+
+== Framework documentation
+
+indexList::[relative=subprojects/apache-felix-framework/*.adoc]

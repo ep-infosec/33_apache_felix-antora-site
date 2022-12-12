@@ -1,0 +1,127 @@
+= Site How To
+
+The website is written in https://docs.asciidoctor.org/asciidoc/latest/[AsciiDoc], built using https://docs.antora.org/[Antora], and published using an https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-WebSiteDeploymentServiceforGitRepositories[`.asf.yaml`] file in a git repo.
+
+== Overall organization
+
+For simplicity, this references the GitHub mirrors of the Apache gitbox repos.
+
+General content::
+Content not specific to a particular subproject and unmigrated content is in the https://github.com/apache/felix-antora-site[felix-antora-site] repository.
+At the moment there is only one Antora component, version, and module, so the content is all under `modules/ROOT/pages`.
+
+Subproject-specific content::
+Content specific to a subproject may be put in the subproject repo in the standard Antora layout.
+For instance, SCR content could be in `felix-dev` under `scr/docs/modules/ROOT/pages`.
+This feature is not yet used.
+
+Antora playbook::
+The Antora playbook together with  the Node project to fetch and set up the required dependencies is in the https://github.com/apache/felix-antora[felix-antora] repository.
+
+Antora UI::
+The UI for this website is in the https://github.com/apache/felix-antora-ui[felix-antora-ui] repository.
+For simplicity this is currently set up as an extension of the Antora default UI using https://gitlab.com/djencks/antora-ui-builder[].
+
+Published site content::
+The website build publishes the content to https://github.com/apache/felix-site-pub[felix-site-pub] in the `asf-site` branch.
+The `.asf.yaml` file is configured to publish the content to Apache servers.
+
+Automated site build::
+The site is built using Jenkins jobs https://ci-builds.apache.org/job/Felix/job/website-build[Felix/website-build] and https://ci-builds.apache.org/job/Felix/job/website-content-trigger[Felix/website-content-trigger].
+Committing to the `felix-antora-site` or `felix-antora` repositories will trigger a website build and publish.
+Changes to the UI will not trigger an automated build, but PMC members may trigger a build manually with the https://ci-builds.apache.org/job/Felix/job/website-build/build?delay=0sec[Build Now] button.
+If subproject content is moved to subproject repositories more trigger jobs will be needed.
+
+== Extensions currently in use
+
+https://github.com/Mogztter/asciidoctor-kroki[asciidoctor-kroki]::
+This provides access to numerous text-to-diagram converters.
+Currently it is used for some UMLet diagrams in the DependencyManager documentation.
+
+https://gitlab.com/djencks/asciidoctor-antora-indexer[asciidoctor-antora-indexer]::
+This queries the Antora content catalog and renders the results as lists, tables, etc.
+It is currently used in the xref:site-map.adoc[] page to partially automate generation.
+
+https://gitlab.com/djencks/asciidoctor-jsonpath[asciidoctor-jsonpath]::
+This queries a json, yaml, or toml document and renders the results as lists, tables, etc.
+It is currently used to generate the content on the downloads page.
+
+== Basic AsciiDoc
+
+The Intellij AsciiDoc plugin provides extensive syntax checking, side-by-side rendering, and a lot of other help.
+
+Consult the Asciidoctor and Antora documentation for complete coverage of syntax and features.
+
+Please use "ventilated prose", with one sentence per line.
+
+* A blank line indicates a new paragraph.
+* A page starts with a title, indicated by `= Title`.
+* Sections are marked with `==`, `===`, etc, the number of `=` indicating section nesting.
+* Sections are automatically assigned ids that can be used as the fragment in links.
+To manually specify an id, precede the section line with `[#my-id]` on a separate line.
+* Code blocks look like this:
+[source,adoc]
+------
+[source,java] <1>
+----  <2>
+class Foo {
+...
+}
+----
+------
+<1> Any language you want: highlighting is available for most.
+<2> Block separator `----`
+
+=== Page links
+
+Between pages::
+Use the `xref:` inline macro:
+`+++xref:other-page.adoc[]+++`.
+
+* The path to the other page starts from the `pages` directory: it is not relative to the current page.
+* For a non-fragment reference, the default link text is the other page title.
+Custom text may be specified inside the `[]` brackets.
+* For fragment references you must specify the link text.
+
+Within a page::
+Use the form `+++<<#_fragment_name, link text>>+++`.
+For a link to a section, the default link text is the section title.
+
+NOTE: The Intellij asciidoc plugin has Antora-aware syntax checking and auto-complete, including the generated section ids.
+
+
+== Local build
+
+You need Node and npm installed.
+You also need git to clone the repositories locally, but the build itself does not use git.
+
+I do not recommend following the instructions on the Antora site, which advise installing Antora globally.
+The playbook project is instead set up to use an npm script to install Antora and all required dependencies locally
+At a minimum:
+
+* Clone the `felix-antora` playbook project.
+* Run `npm run plain-install`.
+* Run `npm run build`.
+
+This will build the site locally into build/site, using the remote content sources, such as `felix-antora-site`.
+
+Most likely you will want to modify content sources locally, and build using your local sources, before committing and pushing your changes.
+To enable this:
+
+* Clone the `felix-antora-site` repository and any other content repositories you wish to work with next to the playbook project.
+* Modify the `antora-playbook.yml` to point to the local clones rather than the remote repositories.
+Be sure to specify `branches: HEAD` to use the worktree content rather than the local committed repository content.
+The appropriate changes are already in the playbook, commented out, with comments, for the `felix-antora-site` repository.
+* Build the site as above.
+
+=== Working with the UI
+
+* Clone the `felix-antora-ui` project next to the playbook project.
+* Run `npm i`.
+* Run `./node_modules/gulp/bin/gulp.js` to assemble the UI.
+* To see the results, run `cp build/felix-antora-ui-bundle.zip ../felix-antora/node_modules/@apache-felix/felix-antora-ui/build/felix-antora-ui-bundle.zip` and build the playbook project.
+* When you are satisfied with your changes, commit both source changes and the assembled UI bundle and push to the remote repository.
+* UI bundle changes do not trigger a site build; you'll need to start one manually.
+
+Most likely making changes to src/partials/* templates will be fairly self-explanatory.
+Other changes are likely to need a fairly detailed understanding of the Antora default UI.
